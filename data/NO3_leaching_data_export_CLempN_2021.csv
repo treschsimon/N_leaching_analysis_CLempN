@@ -1,4 +1,4 @@
-site_name;site_code;tree_species;year;N_troughfall;NO3_leaching;rainfall;C_N;country_code;country
+site_name;site_code;tree_species;year;N_throughfall;NO3_leaching;rainfall;C_N;country_code;country
 Riehen Mittelberg;1004;Buche       ;2003;21.43095571;3.488936027;1027.1;1.13369556;CH;Switzerland
 Riehen Mittelberg;1004;Buche       ;2004;21.12872429;2.460830587;1027.1;1.13369556;CH;Switzerland
 Riehen Mittelberg;1004;Buche       ;2005;20.82649286;0.593950259;1027.1;1.13369556;CH;Switzerland
