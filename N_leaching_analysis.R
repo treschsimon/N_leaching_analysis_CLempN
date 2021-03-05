@@ -6,7 +6,7 @@ library(readxl) # import xlsx data
 library(latex2exp) # LaTex expressions for plots
 library(lme4) # mixed effect models Bates et al. 2018 JSS 67
 library(jtools) # mixed models effect plots, tables for model outputs
-library(ggeffects) # predicted values for all possible levels or values from a model’s predictor: Lüdecke D (2018). JOSS 26
+library(ggeffects) # predicted values for all possible levels or values from a model: Luedecke D. (2018). JOSS 26
 library(splines) # modelling natural cubic splines
 
 # original Figure 2010 Assessment:
@@ -77,6 +77,9 @@ final_data <- bind_rows(data_mean, data_UK)
 # final_data <- final_data %>% dplyr::filter(!tree_species=="Oak") %>%
 #   droplevels()#without UK oaks
 
+# final_data <- final_data %>% dplyr::filter(!site_name %in% c("Savernake","Grizedale","Sherwood","Rannoch","Tummel","Llyn brianne") ) %>%
+#   droplevels()#without older datat in UK
+
 
 # 2.3 adding CZ data sets (already averaged mean values 2015-2019) ####
 data_UK <- mydata %>% 
@@ -94,7 +97,7 @@ levels(as.factor(final_data$tree_species))
 # 
 # - Nout: NO3 leaching measured in the soil solution of the mineral soil (UK: 50 cm soil depth, CH 80 cm soil depth)
 # 
-# # Data discrepancy: - UK data is from 2000-2006
+# # Data discrepancy: - UK data 4 Sites are as the rest of the date average values for 2015-2019, 6 sites are from 2000-2006
 # 
 # - Nin for CH plots is the modelled N deposition (Rihm et al. 2019)
 # 
@@ -152,7 +155,7 @@ str(as.factor(final_data$tree_species))
 
 
 final_data <- final_data %>% 
-              drop_na(C_N) #1 observation contains NA in CN (Czech Republic	LIT)
+              drop_na(C_N) #2 observation contains NA in CN (Czech Republic	LIT + UK site)
 
 final_data <- final_data %>% 
                 mutate(N_bulk = coalesce(N_precipitation,N_throughfall)) # N_bulk for CH plots = N deposition
@@ -173,24 +176,31 @@ AIC(mod0)
 # sign. relationship Nin Nout
 
 # MODEL FIT:
-# AIC = 274.88, BIC = 283.51
-# Pseudo-R² (fixed effects) = 0.12
-# Pseudo-R² (total) = 0.20 
+# AIC = 271.23, BIC = 279.86
+# Pseudo-R² (fixed effects) = 0.13
+# Pseudo-R² (total) = 0.22  
 # 
 # FIXED EFFECTS:
 
 #   Est.   S.E.   t val.    d.f.      p
 
-# (Intercept)          -0.98   0.67    -1.45    9.99   0.18
-# N_throughfall          0.08   0.03     2.50   24.02   0.02
+# (Intercept)           -0.99   0.66    -1.50    9.94   0.16
+# N_throughfall          0.08   0.03     2.62   27.38   0.01
 
 
 
-# final model with interaction N_dep and rainfall 
-mod1<-lmer(log(NO3_leaching)  ~ N_throughfall * rainfall + (1|country) ,data = final_data )
+# final model with N_dep and rainfall 
+mod1<-lmer(log(NO3_leaching)  ~ scale(N_throughfall) + scale(rainfall) + (1|country) ,data = final_data )
 summ(mod1)
 plot_summs(mod1)
-# model not better (AIC much bigger, interaction n.s.)
+
+anova(mod0,mod1)# model not improved
+
+# final model with interaction N_dep and rainfall 
+mod1<-lmer(log(NO3_leaching)  ~ scale(N_throughfall) * scale(rainfall) + (1|country) ,data = final_data )
+summ(mod1)
+plot_summs(mod1)
+anova(mod0,mod1)# model not improved
 
 # final model with natural cubic splines (non-linearity)
 mod2<-lmer(log(NO3_leaching)  ~ ns(N_throughfall,2)  +  (1|country),data = final_data )
@@ -206,53 +216,41 @@ anova(mod0,mod2.1) #mod2.1 not s. improved keep mod0
 
 
 # model with C/N ratio
-mod3<-lmer(log(NO3_leaching) ~ N_throughfall  + C_N +  (1|country),data = final_data)
+mod3<-lmer(log(NO3_leaching) ~ scale(N_throughfall)  + scale(C_N) +  (1|country),data = final_data)
 summ(mod3)
 plot_summs(mod3)
 AIC(mod3)
-# [1] 281.4215
+# [1] 268.2651
 # MODEL FIT:
-#   AIC = 281.42, BIC = 292.22
-# Pseudo-R² (fixed effects) = 0.10
-# Pseudo-R² (total) = 0.18 
+# AIC = 268.27, BIC = 279.06
+# Pseudo-R² (fixed effects) = 0.11
+# Pseudo-R² (total) = 0.19 
 # 
 # FIXED EFFECTS:
 
 #   Est.   S.E.   t val.    d.f.      p
 
-#   (Intercept)          -1.51   1.08    -1.39    6.51   0.21
-# N_throughfall          0.09   0.03     2.50   60.85   0.02
-# C_N                   0.02   0.03     0.63    2.14   0.59
-
+# (Intercept)                  0.47   0.42     1.11    0.89   0.48
+# scale(N_throughfall)         0.80   0.31     2.61   60.91   0.01
+# scale(C_N)                   0.27   0.42     0.63    2.15   0.59
 
 # model with C/N ratio interaction with ndep
-mod4<-lmer(log(NO3_leaching)  ~ N_throughfall  *  C_N +  (1|country),data = final_data)
+mod4<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  * scale(C_N) +  (1|country),data = final_data)
 summ(mod4)
 plot_summs(mod4)
 anova(mod3,mod4)# model not better keep mod3
 AIC(mod4)
 
 # model with C/N ratio grouped <22
-mod5<-lmer(log(NO3_leaching)  ~ N_throughfall  +  C_N_22_fact +  (1|country),data = final_data)
+mod5<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  +  C_N_22_fact +  (1|country),data = final_data)
 summ(mod5)
 plot_summs(mod5)
 anova(mod3,mod5)
 AIC(mod5)
-# 275.2315 # delta AIC = -6.2 -> model with grouped C/N ratio better 
+# 267.117 # model not better keep mod3
 
-# MODEL FIT:
-#   AIC = 275.23, BIC = 286.03
-# Pseudo-R² (fixed effects) = 0.16
-# Pseudo-R² (total) = 0.31 
-# 
-# FIXED EFFECTS:
-#   Est.   S.E.   t val.    d.f.      p
-#   (Intercept)             -0.54   1.07    -0.50   13.00   0.63
-# N_throughfall             0.07   0.04     2.06   60.38   0.04
-# C_N_22_fact> 22         -0.55   0.84    -0.65   18.68   0.53
-
-# model with C/N ratio interaction with ndep
-mod6<-lmer(log(NO3_leaching)  ~ N_throughfall  +  C_N_25_fact +  (1|country),data = final_data)
+# model with C/N ratio grouped <25
+mod6<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  + C_N_25_fact +  (1|country),data = final_data)
 summ(mod6)
 plot_summs(mod6)
 anova(mod5,mod6)# model not better keep mod5
@@ -260,48 +258,72 @@ AIC(mod6)
 # [1] 275.2128
 
 # model without oak sites (3 UK sites with relatively high C:N ratios)
-mod7<-lmer(log(NO3_leaching)  ~ N_throughfall  +  C_N_22_fact +  (1|country),
+mod7<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  +  C_N_22_fact +  (1|country),
            data = final_data %>% dplyr::filter(!tree_species=="Oak"))
 summ(mod7)
 plot_summs(mod7)
-AIC(mod7)# model not better keep mod3
+AIC(mod7)# model better but keep oak data 
 
 
 
 # model including tree_group
-mod8<-lmer(log(NO3_leaching)  ~ N_throughfall  +  C_N_22_fact + tree_group +  (1|country),
+mod8<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  + scale(C_N) + tree_group +  (1|country),
            data = final_data)
 summ(mod8)
 plot_summs(mod8)
-anova(mod5,mod8)# model not better keep mod5
+anova(mod5,mod8)# 
 AIC(mod8)
-# [1] 273.9482
+# [1] 268.1391 -> Model not much better but confounding factors (C:N and tree group) are considered in this model!
+# MODEL FIT:
+#   AIC = 268.14, BIC = 283.25
+# Pseudo-R² (fixed effects) = 0.14
+# Pseudo-R² (total) = 0.31 
+# 
+# FIXED EFFECTS:
+#   Est.   S.E.   t val.    d.f.      p
+# 
+#   (Intercept)                  -0.07   0.69    -0.11    2.37   0.92
+# scale(N_throughfall)          0.73   0.31     2.35   59.00   0.02
+# scale(C_N)                    0.06   0.52     0.11    2.54   0.92
+# tree_groupevergreen           0.89   0.56     1.59   58.94   0.12
+# tree_groupmixed               0.94   0.69     1.36   58.29   0.18
+
 
 # model only tree_group no CN
-mod9<-lmer(log(NO3_leaching)  ~ N_throughfall  +  tree_group +  (1|country),
+mod9<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  +  tree_group +  (1|country),
            data = final_data)
 summ(mod9)
 plot_summs(mod9)
 AIC(mod9)# 
-# [1] 273.9259 
-# delta AIC -1.3041 -> keep model with CN
+# [1] 266.617
+# delta AIC -1.64 
 
 
-# model only tree_group no CN
-mod10<-lmer(log(NO3_leaching)  ~ N_bulk  +  C_N_22_fact +  (1|country),
+# model N_bulk
+mod10<-lmer(log(NO3_leaching)  ~  scale(N_bulk)  +   scale(C_N) +  (1|country),
            data = final_data)
 summ(mod10)
 plot_summs(mod10)
 AIC(mod10)# 
 # [1] 275.6
-# delta AIC 0.38-> keep mod5
+#  -> keep model with CN
+
+
+# model including C_N_22_fact
+mod11<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  + C_N_22_fact + tree_group +  (1|country),
+           data = final_data)
+summ(mod11)
+plot_summs(mod11)
+AIC(mod11)
+# 266.6 -> keep model 8
+
 
 # final model selection
 mod<-mod3
 mod<-mod0
 mod<-mod9
 mod<-mod5
-
+mod<-mod8
 summ(mod,digits=4)
 
 # iid evaluation
@@ -326,14 +348,17 @@ p_LMEM_pred_n_dep
 
 p_LMEM_pred_n_dep<-ggplot(LMEM_pred,aes(x=x,y=predicted))+
    geom_point(data=final_data,size=1.5, aes(y=NO3_leaching,x=N_throughfall, colour=as.factor(country_code),shape=C_N_22))+
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = .1,show.legend = F,size=0.0001) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = .07,show.legend = F,size=0.0001) +
+  # geom_line(aes(y = conf.low), alpha = 1,show.legend = F,size=0.3, linetype="dotted") +
+  # geom_line(aes(y = conf.high), alpha = 1,show.legend = F,size=0.3, linetype="dotted") +
+  
   geom_line(size=1.5)+
   labs(y=TeX("N_{out} (kg ha^{-1} yr^{-1})"),x= TeX("N_{in} (kg ha^{-1} yr^{-1})"))+
   scale_colour_viridis_d(end = 0.92, name="Country")+
   scale_shape_manual( values = c(16,15), name="C:N ratio",na.translate = F)+
    scale_y_continuous( breaks = c(0,5,10,15,20,25,30,35))+
    scale_x_continuous( breaks = c(5,10,15,20,25,30,35,40))+
-   annotate("text", x=4,y=30, hjust=0, label = c(TeX("N_{in} p = 0.04 *")),size=2.7)+
+   annotate("text", x=4,y=30, hjust=0, label = c(TeX("N_{in} p = 0.02 *")),size=2.7)+
   # annotate("text", x=5,y=10, hjust=0, vjust=2,label = c("C/N ratio p < 0.05 * "),size=2.7)+
     theme(axis.title=element_text(size=12),axis.ticks = element_line(size=0.1), axis.line=element_line(colour="black"),text = element_text(size=14, colour = "black"),
         axis.text.y = element_text(size = 12, colour = "black"),axis.text.x = element_text(size =12, colour = "black"),axis.line.x=element_line(size = 0.1),axis.line.y=element_line(size = 0.1)) +
