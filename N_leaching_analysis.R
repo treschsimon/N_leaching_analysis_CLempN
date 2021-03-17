@@ -55,10 +55,27 @@ test <- test%>% dplyr::filter(C_N_22<2) %>%
   distinct()
 
 summary(as.factor(test$country_code))
-# 33 sites from CH and 4 from CZ are below C/N ratio of 22
+# 33 sites from CH and 4 from CZ and 1 from UK are below C/N ratio of 22
 
+# n deposition < 12 kg N ha a (critical level)
 data_15_19<- mydata %>%  
               filter(year>2014 & year<2020) #data from 2015-2019 -> 5 year average
+
+
+# how many sites have n-deposition < 12 kg N ha a?
+test<- data_15_19 %>%  
+  dplyr::mutate(Ndep12= case_when(N_throughfall <=12 ~ 1, TRUE ~ 2))
+
+test <- test%>% 
+  dplyr::select(country_code, site_name, Ndep12) %>% 
+  distinct()
+
+test <- test%>% dplyr::filter(Ndep12<2) %>% 
+  distinct()
+
+summary(as.factor(test$country_code))
+# sites with N-deposition < 12: Total 3 (2 BE, 1 CH)
+# sites with N-deposition < 20: Total 9 (3 BE, 6 CH)
 
 # average 2015-2019
 
@@ -220,19 +237,17 @@ mod3<-lmer(log(NO3_leaching) ~ scale(N_throughfall)  + scale(C_N) +  (1|country)
 summ(mod3)
 plot_summs(mod3)
 AIC(mod3)
-# [1] 268.2651
+# [1] 271.9
 # MODEL FIT:
-# AIC = 268.27, BIC = 279.06
+#   AIC = 271.94, BIC = 282.81
 # Pseudo-R² (fixed effects) = 0.11
-# Pseudo-R² (total) = 0.19 
+# Pseudo-R² (total) = 0.23 
 # 
 # FIXED EFFECTS:
-
 #   Est.   S.E.   t val.    d.f.      p
-
-# (Intercept)                  0.47   0.42     1.11    0.89   0.48
-# scale(N_throughfall)         0.80   0.31     2.61   60.91   0.01
-# scale(C_N)                   0.27   0.42     0.63    2.15   0.59
+# (Intercept)                  0.53   0.48     1.12    0.96   0.47
+# scale(N_throughfall)         0.79   0.31     2.60   61.98   0.01
+# scale(C_N)                   0.22   0.46     0.47    2.13   0.68
 
 # model with C/N ratio interaction with ndep
 mod4<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  * scale(C_N) +  (1|country),data = final_data)
@@ -240,6 +255,7 @@ summ(mod4)
 plot_summs(mod4)
 anova(mod3,mod4)# model not better keep mod3
 AIC(mod4)
+# 
 
 # model with C/N ratio grouped <22
 mod5<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  +  C_N_22_fact +  (1|country),data = final_data)
@@ -247,15 +263,15 @@ summ(mod5)
 plot_summs(mod5)
 anova(mod3,mod5)
 AIC(mod5)
-# 267.117 # model not better keep mod3
+# 270.7 # model not better keep mod5
 
 # model with C/N ratio grouped <25
 mod6<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  + C_N_25_fact +  (1|country),data = final_data)
 summ(mod6)
 plot_summs(mod6)
-anova(mod5,mod6)# model not better keep mod5
+anova(mod5,mod6)
 AIC(mod6)
-# [1] 275.2128
+# [1] 270.7# model not better keep mod5
 
 # model without oak sites (3 UK sites with relatively high C:N ratios)
 mod7<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  +  C_N_22_fact +  (1|country),
@@ -273,20 +289,20 @@ summ(mod8)
 plot_summs(mod8)
 anova(mod5,mod8)# 
 AIC(mod8)
-# [1] 268.1391 -> Model not much better but confounding factors (C:N and tree group) are considered in this model!
+# [1] 271.4 -> Model equal but confounding factors (C:N and tree group) are considered in this model!
 # MODEL FIT:
-#   AIC = 268.14, BIC = 283.25
-# Pseudo-R² (fixed effects) = 0.14
-# Pseudo-R² (total) = 0.31 
+#   AIC = 271.49, BIC = 286.71
+# Pseudo-R² (fixed effects) = 0.15
+# Pseudo-R² (total) = 0.34
 # 
 # FIXED EFFECTS:
 #   Est.   S.E.   t val.    d.f.      p
 # 
-#   (Intercept)                  -0.07   0.69    -0.11    2.37   0.92
-# scale(N_throughfall)          0.73   0.31     2.35   59.00   0.02
-# scale(C_N)                    0.06   0.52     0.11    2.54   0.92
-# tree_groupevergreen           0.89   0.56     1.59   58.94   0.12
-# tree_groupmixed               0.94   0.69     1.36   58.29   0.18
+# (Intercept)                  -0.04   0.73    -0.06    2.29   0.96
+# scale(N_throughfall)          0.72   0.31     2.35   59.99   0.02
+# scale(C_N)                   -0.01   0.55    -0.01    2.72   0.99
+# tree_groupevergreen           0.93   0.55     1.69   59.73   0.10
+# tree_groupmixed               0.96   0.68     1.42   58.85   0.16
 
 
 # model only tree_group no CN
@@ -295,9 +311,9 @@ mod9<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  +  tree_group +  (1|countr
 summ(mod9)
 plot_summs(mod9)
 AIC(mod9)# 
-# [1] 266.617
-# delta AIC -1.64 
-
+# [1] 270.0
+# delta AIC -1.4 
+#  -> keep mod8
 
 # model N_bulk
 mod10<-lmer(log(NO3_leaching)  ~  scale(N_bulk)  +   scale(C_N) +  (1|country),
@@ -305,8 +321,8 @@ mod10<-lmer(log(NO3_leaching)  ~  scale(N_bulk)  +   scale(C_N) +  (1|country),
 summ(mod10)
 plot_summs(mod10)
 AIC(mod10)# 
-# [1] 275.6
-#  -> keep model with CN
+# [1] 272.6124
+#  -> keep mod8
 
 
 # model including C_N_22_fact
@@ -315,7 +331,7 @@ mod11<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  + C_N_22_fact + tree_grou
 summ(mod11)
 plot_summs(mod11)
 AIC(mod11)
-# 266.6 -> keep model 8
+# 270.0 -> keep mod8
 
 
 # final model selection
