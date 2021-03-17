@@ -108,6 +108,11 @@ final_data <- bind_rows(final_data, data_UK)
 
 levels(as.factor(final_data$tree_species))
 
+final_data%>% modify_if(is.character, as.factor)%>% 
+summary()
+# 4 countries
+
+  summarise(tree_species=tree_species)
 
 # 2.4 data description ####
 # - Nin: Total N (kg ha-1 a-1 in troughfall)
