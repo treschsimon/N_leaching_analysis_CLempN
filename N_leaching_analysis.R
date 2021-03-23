@@ -103,16 +103,21 @@ data_UK <- mydata %>%
   filter(country_code=="CZ")
 
 
-final_data <- bind_rows(final_data, data_UK)
+# 2.4 adding RO data sets (already averaged mean values 2015-2019) ####
+data_RO <- mydata %>% 
+  filter(country_code=="RO")
+
+
+
+final_data <- bind_rows(final_data, data_UK, data_RO)
 
 
 levels(as.factor(final_data$tree_species))
 
 final_data%>% modify_if(is.character, as.factor)%>% 
 summary()
-# 4 countries
+# 5 countries
 
-  summarise(tree_species=tree_species)
 
 # 2.4 data description ####
 # - Nin: Total N (kg ha-1 a-1 in troughfall)
@@ -198,9 +203,9 @@ AIC(mod0)
 # sign. relationship Nin Nout
 
 # MODEL FIT:
-# AIC = 271.23, BIC = 279.86
-# Pseudo-R² (fixed effects) = 0.13
-# Pseudo-R² (total) = 0.22  
+# AIC = 293.32, BIC = 302.26
+# Pseudo-R² (fixed effects) = 0.10
+# Pseudo-R² (total) = 0.47  
 # 
 # FIXED EFFECTS:
 
@@ -242,17 +247,17 @@ mod3<-lmer(log(NO3_leaching) ~ scale(N_throughfall)  + scale(C_N) +  (1|country)
 summ(mod3)
 plot_summs(mod3)
 AIC(mod3)
-# [1] 271.9
+# [1] 288
 # MODEL FIT:
-#   AIC = 271.94, BIC = 282.81
-# Pseudo-R² (fixed effects) = 0.11
-# Pseudo-R² (total) = 0.23 
+# AIC = 288.41, BIC = 299.58
+# Pseudo-R² (fixed effects) = 0.24
+# Pseudo-R² (total) = 0.62 
 # 
 # FIXED EFFECTS:
 #   Est.   S.E.   t val.    d.f.      p
-# (Intercept)                  0.53   0.48     1.12    0.96   0.47
-# scale(N_throughfall)         0.79   0.31     2.60   61.98   0.01
-# scale(C_N)                   0.22   0.46     0.47    2.13   0.68
+# Intercept)                   1.56   0.85     1.83    3.34   0.15
+# scale(N_throughfall)          0.74   0.30     2.49   65.97   0.02
+# scale(C_N)                   -0.81   0.64    -1.27    8.95   0.24
 
 # model with C/N ratio interaction with ndep
 mod4<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  * scale(C_N) +  (1|country),data = final_data)
@@ -268,7 +273,7 @@ summ(mod5)
 plot_summs(mod5)
 anova(mod3,mod5)
 AIC(mod5)
-# 270.7 # model not better keep mod5
+ # model not better keep mod5
 
 # model with C/N ratio grouped <25
 mod6<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  + C_N_25_fact +  (1|country),data = final_data)
@@ -276,9 +281,9 @@ summ(mod6)
 plot_summs(mod6)
 anova(mod5,mod6)
 AIC(mod6)
-# [1] 270.7# model not better keep mod5
+# model not better keep mod5
 
-# model without oak sites (3 UK sites with relatively high C:N ratios)
+# model without oak sites (3 UK sites with relatively high C:N ratios + RO sites)
 mod7<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  +  C_N_22_fact +  (1|country),
            data = final_data %>% dplyr::filter(!tree_species=="Oak"))
 summ(mod7)
@@ -294,20 +299,21 @@ summ(mod8)
 plot_summs(mod8)
 anova(mod5,mod8)# 
 AIC(mod8)
-# [1] 271.4 -> Model equal but confounding factors (C:N and tree group) are considered in this model!
+#  -> Model equal but confounding factors (C:N and tree group) are considered in this model!
 # MODEL FIT:
-#   AIC = 271.49, BIC = 286.71
-# Pseudo-R² (fixed effects) = 0.15
-# Pseudo-R² (total) = 0.34
+# AIC = 287.92, BIC = 303.56
+# Pseudo-R² (fixed effects) = 0.25
+# Pseudo-R² (total) = 0.66 
 # 
 # FIXED EFFECTS:
 #   Est.   S.E.   t val.    d.f.      p
 # 
-# (Intercept)                  -0.04   0.73    -0.06    2.29   0.96
-# scale(N_throughfall)          0.72   0.31     2.35   59.99   0.02
-# scale(C_N)                   -0.01   0.55    -0.01    2.72   0.99
-# tree_groupevergreen           0.93   0.55     1.69   59.73   0.10
-# tree_groupmixed               0.96   0.68     1.42   58.85   0.16
+# (Intercept)                   1.00   0.97     1.04    4.46   0.35
+# scale(N_throughfall)          0.67   0.30     2.25   63.95   0.03
+# scale(C_N)                   -0.93   0.66    -1.40   10.88   0.19
+# tree_groupevergreen           0.90   0.52     1.74   61.67   0.09
+# tree_groupmixed               0.91   0.65     1.40   61.58   0.17
+
 
 
 # model only tree_group no CN
@@ -372,14 +378,13 @@ p_LMEM_pred_n_dep<-ggplot(LMEM_pred,aes(x=x,y=predicted))+
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = .07,show.legend = F,size=0.0001) +
   # geom_line(aes(y = conf.low), alpha = 1,show.legend = F,size=0.3, linetype="dotted") +
   # geom_line(aes(y = conf.high), alpha = 1,show.legend = F,size=0.3, linetype="dotted") +
-  
-  geom_line(size=1.5)+
+   geom_line(size=1.5)+
   labs(y=TeX("N_{out} (kg ha^{-1} yr^{-1})"),x= TeX("N_{in} (kg ha^{-1} yr^{-1})"))+
   scale_colour_viridis_d(end = 0.92, name="Country")+
   scale_shape_manual( values = c(16,15), name="C:N ratio",na.translate = F)+
    scale_y_continuous( breaks = c(0,5,10,15,20,25,30,35))+
    scale_x_continuous( breaks = c(5,10,15,20,25,30,35,40))+
-   annotate("text", x=4,y=30, hjust=0, label = c(TeX("N_{in} p = 0.02 *")),size=2.7)+
+   annotate("text", x=4,y=30, hjust=0, label = c(TeX("N_{in} p = 0.03 *")),size=2.7)+
   # annotate("text", x=5,y=10, hjust=0, vjust=2,label = c("C/N ratio p < 0.05 * "),size=2.7)+
     theme(axis.title=element_text(size=12),axis.ticks = element_line(size=0.1), axis.line=element_line(colour="black"),text = element_text(size=14, colour = "black"),
         axis.text.y = element_text(size = 12, colour = "black"),axis.text.x = element_text(size =12, colour = "black"),axis.line.x=element_line(size = 0.1),axis.line.y=element_line(size = 0.1)) +
@@ -389,6 +394,27 @@ p_LMEM_pred_n_dep<-ggplot(LMEM_pred,aes(x=x,y=predicted))+
   theme(legend.title=element_text(size=10),legend.box.just = "left",legend.spacing = unit(0, 'cm'))+
     coord_cartesian(ylim = c(0, 30), xlim = c(4,41)) #first plot than zoom in
 p_LMEM_pred_n_dep
+
+
+p_LMEM_pred_n_dep<-ggplot(LMEM_pred,aes(x=x,y=predicted))+
+  geom_point(data=final_data,size=1.5, aes(y=NO3_leaching,x=N_throughfall, colour=as.factor(country_code),shape=tree_group))+
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = .07,show.legend = F,size=0.0001) +
+  geom_line(size=1.5)+
+  labs(y=TeX("N_{out} (kg ha^{-1} yr^{-1})"),x= TeX("N_{in} (kg ha^{-1} yr^{-1})"))+
+  scale_colour_viridis_d(end = 0.92, name="Country")+
+  scale_shape_manual( values = c(17,16,15), name="Tree type",na.translate = F)+
+  scale_y_continuous( breaks = c(0,5,10,15,20,25,30,35,40))+
+  scale_x_continuous( breaks = c(5,10,15,20,25,30,35,40))+
+  annotate("text", x=4,y=40, hjust=0, label = c(TeX("N_{in} p = 0.03 *")),size=2.7)+
+   theme(axis.title=element_text(size=12),axis.ticks = element_line(size=0.1), axis.line=element_line(colour="black"),text = element_text(size=14, colour = "black"),
+        axis.text.y = element_text(size = 12, colour = "black"),axis.text.x = element_text(size =12, colour = "black"),axis.line.x=element_line(size = 0.1),axis.line.y=element_line(size = 0.1)) +
+  theme(panel.background=element_blank(),panel.border = element_rect(colour = "black", fill=NA, size=0.1),panel.grid.minor=element_blank(),panel.grid.major=element_blank(),
+        legend.key=element_blank(),legend.background=element_blank(),legend.title=element_text(),legend.key.height=unit(0.01,"line"),plot.title = element_text(hjust = 0.5))+
+  theme(legend.justification = c(1, 1), legend.position = "right",legend.direction="vertical")+
+  theme(legend.title=element_text(size=10),legend.box.just = "left",legend.spacing = unit(0, 'cm'))+
+  coord_cartesian(ylim = c(0, 40), xlim = c(4,41)) #first plot than zoom in
+p_LMEM_pred_n_dep
+
 
  ggsave(p_LMEM_pred_n_dep,file="plots/p_LMEM_pred_n_dep.pdf", width = 13, height = 10, units = "cm", dpi = 1000)
 
