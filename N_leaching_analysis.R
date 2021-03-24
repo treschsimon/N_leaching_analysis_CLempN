@@ -301,18 +301,18 @@ anova(mod5,mod8)#
 AIC(mod8)
 #  -> Model equal but confounding factors (C:N and tree group) are considered in this model!
 # MODEL FIT:
-# AIC = 287.92, BIC = 303.56
+# AIC = 288.17, BIC = 303.81
 # Pseudo-R² (fixed effects) = 0.25
 # Pseudo-R² (total) = 0.66 
 # 
 # FIXED EFFECTS:
 #   Est.   S.E.   t val.    d.f.      p
 # 
-# (Intercept)                   1.00   0.97     1.04    4.46   0.35
-# scale(N_throughfall)          0.67   0.30     2.25   63.95   0.03
-# scale(C_N)                   -0.93   0.66    -1.40   10.88   0.19
-# tree_groupevergreen           0.90   0.52     1.74   61.67   0.09
-# tree_groupmixed               0.91   0.65     1.40   61.58   0.17
+# (Intercept)                   1.06   0.97     1.10    4.33   0.33
+# scale(N_throughfall)          0.67   0.30     2.23   63.95   0.03
+# scale(C_N)                   -0.94   0.67    -1.41   10.86   0.19
+# tree_groupevergreen           0.86   0.51     1.67   62.07   0.10
+# tree_groupmixed               0.87   0.68     1.28   61.90   0.21
 
 
 
