@@ -402,7 +402,7 @@ p_LMEM_pred_n_dep<-ggplot(LMEM_pred,aes(x=x,y=predicted))+
   geom_line(size=1.5)+
   labs(y=TeX("N_{out} (kg ha^{-1} yr^{-1})"),x= TeX("N_{in} (kg ha^{-1} yr^{-1})"))+
   scale_colour_viridis_d(end = 0.92, name="Country")+
-  scale_shape_manual( values = c(17,16,15), name="Tree type",na.translate = F)+
+  scale_shape_manual( values = c(17,16,15), name="Tree category",na.translate = F)+
   scale_y_continuous( breaks = c(0,5,10,15,20,25,30,35,40))+
   scale_x_continuous( breaks = c(5,10,15,20,25,30,35,40))+
   annotate("text", x=4,y=40, hjust=0, label = c(TeX("N_{in} p = 0.03 *")),size=2.7)+
