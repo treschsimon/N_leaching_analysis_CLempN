@@ -295,24 +295,23 @@ AIC(mod7)# model better but keep oak data
 # model including tree_group
 mod8<-lmer(log(NO3_leaching)  ~ scale(N_throughfall)  + scale(C_N) + tree_group +  (1|country),
            data = final_data)
-summ(mod8)
+summ(mod8,digits=4)
 plot_summs(mod8)
 anova(mod5,mod8)# 
 AIC(mod8)
 #  -> Model equal but confounding factors (C:N and tree group) are considered in this model!
 # MODEL FIT:
-# AIC = 288.17, BIC = 303.81
-# Pseudo-R² (fixed effects) = 0.25
-# Pseudo-R² (total) = 0.66 
+# AIC = 292.7567, BIC = 308.4962
+# Pseudo-R² (fixed effects) = 0.1627
+# Pseudo-R² (total) = 0.6487 
 # 
 # FIXED EFFECTS:
-#   Est.   S.E.   t val.    d.f.      p
-# 
-# (Intercept)                   1.06   0.97     1.10    4.33   0.33
-# scale(N_throughfall)          0.67   0.30     2.23   63.95   0.03
-# scale(C_N)                   -0.94   0.67    -1.41   10.86   0.19
-# tree_groupevergreen           0.86   0.51     1.67   62.07   0.10
-# tree_groupmixed               0.87   0.68     1.28   61.90   0.21
+#                                 Est.     S.E.    t val.      d.f.        p
+# (Intercept)                   1.0050   1.0777    0.9325    3.7425   0.4072
+# scale(N_throughfall)          0.6993   0.3075    2.2744   63.3052   0.0263
+# scale(C_N)                   -0.4857   0.7531   -0.6450   15.7832   0.5282
+# tree_groupevergreen           0.8199   0.5044    1.6256   62.1275   0.1091
+# tree_groupmixed               0.8617   0.6765    1.2738   61.6108   0.2075
 
 
 
@@ -354,6 +353,7 @@ mod<-mod8
 summ(mod,digits=4)
 
 # iid evaluation
+pdf("plots/LMEM_iid_evaluation.pdf") 
 par(mfrow=c(2,2), mar=c(4,4,2,1), mgp=c(2.2,0.8,0))
 scatter.smooth(fitted(mod), resid(mod)); abline(h=0, lty=2)
 mtext("Tukey-Anscombe Plot", 3, line=0.8, cex=0.8)  # residuals vs. fitted
@@ -362,6 +362,7 @@ qqline(resid(mod))
 scatter.smooth(fitted(mod), sqrt(abs(resid(mod)))) # res. var vs. fitted
 qqnorm(ranef(mod)$country[,1], main="Normal qq-plot, random effects", cex.main=0.8)
 qqline(ranef(mod)$country[,1]) # qq of random effects
+dev.off()
 
 # 4.1 Plotting effect plots of LMEM####
 # effect plots with ggpredict
@@ -384,7 +385,7 @@ p_LMEM_pred_n_dep<-ggplot(LMEM_pred,aes(x=x,y=predicted))+
   scale_shape_manual( values = c(16,15), name="C:N ratio",na.translate = F)+
    scale_y_continuous( breaks = c(0,5,10,15,20,25,30,35))+
    scale_x_continuous( breaks = c(5,10,15,20,25,30,35,40))+
-   annotate("text", x=4,y=30, hjust=0, label = c(TeX("N_{in} p = 0.03 *")),size=2.7)+
+   annotate("text", x=4,y=30, hjust=0, label = c(TeX("N_{in}: p = 0.026 *")),size=2.7)+
   # annotate("text", x=5,y=10, hjust=0, vjust=2,label = c("C/N ratio p < 0.05 * "),size=2.7)+
     theme(axis.title=element_text(size=12),axis.ticks = element_line(size=0.1), axis.line=element_line(colour="black"),text = element_text(size=14, colour = "black"),
         axis.text.y = element_text(size = 12, colour = "black"),axis.text.x = element_text(size =12, colour = "black"),axis.line.x=element_line(size = 0.1),axis.line.y=element_line(size = 0.1)) +
@@ -405,8 +406,8 @@ p_LMEM_pred_n_dep<-ggplot(LMEM_pred,aes(x=x,y=predicted))+
   scale_shape_manual( values = c(17,16,15), name="Tree category",na.translate = F)+
   scale_y_continuous( breaks = c(0,5,10,15,20,25,30,35,40))+
   scale_x_continuous( breaks = c(5,10,15,20,25,30,35,40))+
-  annotate("text", x=4,y=40, hjust=0, label = c(TeX("N_{in} p = 0.03 *")),size=2.7)+
-   theme(axis.title=element_text(size=12),axis.ticks = element_line(size=0.1), axis.line=element_line(colour="black"),text = element_text(size=14, colour = "black"),
+  annotate("text", x=4,y=40, hjust=0, label = c(TeX("N_{in}: $p=0.026$ *")),size=2.2)+
+  theme(axis.title=element_text(size=12),axis.ticks = element_line(size=0.1), axis.line=element_line(colour="black"),text = element_text(size=14, colour = "black"),
         axis.text.y = element_text(size = 12, colour = "black"),axis.text.x = element_text(size =12, colour = "black"),axis.line.x=element_line(size = 0.1),axis.line.y=element_line(size = 0.1)) +
   theme(panel.background=element_blank(),panel.border = element_rect(colour = "black", fill=NA, size=0.1),panel.grid.minor=element_blank(),panel.grid.major=element_blank(),
         legend.key=element_blank(),legend.background=element_blank(),legend.title=element_text(),legend.key.height=unit(0.01,"line"),plot.title = element_text(hjust = 0.5))+
@@ -416,7 +417,7 @@ p_LMEM_pred_n_dep<-ggplot(LMEM_pred,aes(x=x,y=predicted))+
 p_LMEM_pred_n_dep
 
 
- ggsave(p_LMEM_pred_n_dep,file="plots/p_LMEM_pred_n_dep.pdf", width = 13, height = 10, units = "cm", dpi = 1000)
+ ggsave(p_LMEM_pred_n_dep,file="plots/p_LMEM_pred_n_dep.pdf", width = 14, height = 10, units = "cm", dpi = 1000)
 
  
  # Effect similar to Waldner et al. 2019
